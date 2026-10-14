@@ -47,8 +47,7 @@ PowerAnalyzer/
 │   ├── 4.精度测试与预测.py            # 精度测试与预测
 │   ├── 5.降档阈值计算器.html         # 降档阈值计算
 │   ├── 6.有效采样率.py               # 有效采样率测试
-│   ├── 7.上位机.py                   # 上位机程序
-│   └── config.json                   # 上位机配置文件
+│   └── 7.上位机.py                   # 上位机程序
 ├── requirements.txt                  # Python 依赖
 ├── .gitignore                        # Git 忽略配置
 ├── LICENSE                           # CC BY-NC-SA 4.0 协议

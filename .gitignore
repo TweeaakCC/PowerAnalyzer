@@ -44,6 +44,10 @@ ENV/
 *.exe
 *.dll
 
+# 上位机配置文件 (本地记忆个性化设置，不纳入版本控制)
+config.json
+**/config.json
+
 # 上位机实时采集与分析保存的数据流文件
 *.csv
 *.csv.gz
