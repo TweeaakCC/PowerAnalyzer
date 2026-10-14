@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INA226 采样量程精密计算器</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg: #121212;
+            --card: #1e1e1e;
+            --text: #e0e0e0;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: var(--card);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 450px;
+            border: 1px solid #333;
+        }
+        h2 {
+            margin-top: 0;
+            color: var(--primary);
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #888;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: border 0.3s;
+        }
+        input:focus {
+            border-color: var(--primary);
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .result-card {
+            background: #252525;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 3px solid var(--primary);
+        }
+        .result-val {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 0.2rem;
+        }
+        .result-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+        .warning {
+            grid-column: span 2;
+            color: #ffcc00;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            padding: 8px;
+            background: rgba(255,204,0,0.1);
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>INA226 计算器</h2>
+    
+    <div class="input-group">
+        <label>采样电阻值 (Shunt Resistor)</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="number" id="resVal" value="16.9" step="0.001" oninput="calc()">
+            <select id="resUnit" style="width: 100px;" onchange="calc()">
+                <option value="0.001">mΩ</option>
+                <option value="1" selected>Ω</option>
+                <option value="1000">kΩ</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="result-grid">
+        <div class="result-card">
+            <div class="result-val" id="maxCurrent">0.00 A</div>
+            <div class="result-label">最大量程 (Current)</div>
+        </div>
+        <div class="result-card">
+            <div class="result-val" id="lsbCurrent">0.00 uA</div>
+            <div class="result-label">每 LSB 分辨率</div>
+        </div>
+        <div class="result-card">
+            <div class="result-val">81.92 mV</div>
+            <div class="result-label">满量程压降</div>
+        </div>
+        <div class="result-card">
+            <div class="result-val" id="powerLoss">0.00 mW</div>
+            <div class="result-label">满载电阻发热</div>
+        </div>
+        <div id="warnMsg" class="warning">⚠️ 警告：检测到电阻压降可能影响被测电路！</div>
+    </div>
+</div>
+
+<script>
+    function calc() {
+        const R = parseFloat(document.getElementById('resVal').value) * parseFloat(document.getElementById('resUnit').value);
+        const warn = document.getElementById('warnMsg');
+        
+        if (!R || R <= 0) return;
+
+        // INA226 固定参数
+        const V_SHUNT_MAX = 0.08192; // 81.92mV
+        const V_LSB = 0.0000025;     // 2.5uV
+
+        // 1. 最大量程
+        const maxI = V_SHUNT_MAX / R;
+        let maxIStr = maxI >= 1 ? maxI.toFixed(3) + " A" : (maxI * 1000).toFixed(2) + " mA";
+        if(maxI < 0.001) maxIStr = (maxI * 1000000).toFixed(0) + " uA";
+        document.getElementById('maxCurrent').innerText = maxIStr;
+
+        // 2. LSB 分辨率
+        const lsbI = V_LSB / R;
+        let lsbIStr = (lsbI * 1000000).toFixed(3) + " uA";
+        if(lsbI < 0.000001) lsbIStr = (lsbI * 1000000000).toFixed(2) + " nA";
+        document.getElementById('lsbCurrent').innerText = lsbIStr;
+
+        // 3. 满载发热
+        const pLoss = maxI * maxI * R;
+        let pStr = pLoss >= 1 ? pLoss.toFixed(2) + " W" : (pLoss * 1000).toFixed(1) + " mW";
+        document.getElementById('powerLoss').innerText = pStr;
+
+        // 4. 警告逻辑
+        warn.style.display = R > 1 ? "block" : "none";
+    }
+
+    // 初始化计算
+    calc();
+</script>
+
+</body>
+</html>

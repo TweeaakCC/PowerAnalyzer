@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>INA226 双档位自动回切限值计算器</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f5f7f9;
+            color: #333;
+            margin: 0;
+            padding: 30px;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        label {
+            font-weight: bold;
+            color: #34495e;
+            display: block;
+            margin-bottom: 8px;
+        }
+        textarea {
+            width: 100%;
+            height: 180px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: vertical;
+            background-color: #fafafa;
+        }
+        .control-panel {
+            background-color: #eef2f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        input[type=range] {
+            flex: 1;
+        }
+        .result-panel {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #28a745;
+            margin-bottom: 20px;
+        }
+        .result-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .code-output {
+            background-color: #2d3748;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            border: 1px solid #1a202c;
+        }
+        .badge {
+            background: #17a2b8;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: normal;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>INA226 自动回切限值计算器</h2>
+    
+    <div class="grid">
+        <div>
+            <label for="table_10r">1. 粘贴 小电流档地图 (如 10R 数组):</label>
+            <textarea id="table_10r" placeholder="直接复制粘贴 C 代码数组..."></textarea>
+        </div>
+        <div>
+            <label for="table_10mr">2. 粘贴 大电流档地图 (如 10mR 数组):</label>
+            <textarea id="table_10mr" placeholder="直接复制粘贴 C 代码数组..."></textarea>
+        </div>
+    </div>
+    
+    <div class="control-panel">
+        <label for="factor_slider">3. 调整降档触发系数 (DOWNSHIFT_FACTOR): <span id="factor_val" style="color: #0056b3; font-size: 18px;">1.05</span></label>
+        <div class="slider-container">
+            <span>延迟降档 (0.80)</span>
+            <input type="range" id="factor_slider" min="0.80" max="1.30" step="0.01" value="1.05">
+            <span>提早降档 (1.30)</span>
+        </div>
+        <p style="font-size: 12px; color: #666; margin-top: 8px;">* 注：1.00 代表恰好在小电流档满量程（819uV分流）处触发；1.05 代表提前 5% 开始回切。</p>
+    </div>
+    
+    <div class="result-panel">
+        <div class="result-title">分析与计算结果:</div>
+        <div id="analysis_output" style="line-height: 1.6; font-size: 14px;">请输入上方 C 语言数组地图开始分析...</div>
+    </div>
+    
+    <div>
+        <label>4. 推荐固件宏配置定义 (直接复制替换到 power_app.h 中):</label>
+        <div class="code-output" id="code_output">等待输入地图...</div>
+    </div>
+</div>
+
+<script>
+    // 默认载入您提供的最新数据，方便直接预览
+    const default_10r = `const GainPoint_t gain_table_10r[] = {
+    {    2,    314917}, // 0.0010mA
+    {    4,    314872}, // 0.0021mA
+    {   10,    313547}, // 0.0048mA
+    {   20,    320140}, // 0.0099mA
+    {   42,    321554}, // 0.0206mA
+    {   98,    321569}, // 0.0482mA
+    {  202,    322693}, // 0.0996mA
+    {  415,    323365}, // 0.2050mA
+    {  602,    323041}, // 0.2968mA
+    {  970,    323317}, // 0.4783mA
+    { 1521,    322680}, // 0.7488mA
+    { 1975,    322628}, // 0.9725mA
+    { 3941,    322624}, // 1.9399mA
+    { 8129,    322499}, // 04.00mA
+    {11804,    323134}, // 05.82mA
+    {15408,    322412}, // 07.58mA
+    {19894,    322514}, // 09.79mA
+    {21808,    322746}, // 10.74mA
+    {24193,    322898}, // 11.92mA
+    {25771,    322702}, // 12.69mA
+    {27330,    323008}, // 13.47mA
+    {30242,    322671}, // 14.89mA
+    {31209,    323176}, // 15.39mA
+};`;
+
+    const default_10mr = `const GainPoint_t gain_table_10mr[] = {
+    {  380,      2420}, // 0.092A
+    {  783,      2451}, // 0.192A
+    { 1189,      2456}, // 0.292A
+    { 1596,      2456}, // 0.392A
+    { 2001,      2454}, // 0.491A
+    { 3220,      2453}, // 0.790A
+    { 4025,      2457}, // 0.989A
+    { 6047,      2461}, // 1.488A
+    { 8089,      2456}, // 1.987A
+    {10134,      2452}, // 2.485A
+    {12168,      2452}, // 2.983A
+    {14183,      2456}, // 3.483A
+    {16221,      2455}, // 3.983A
+    {18234,      2458}, // 4.481A
+    {20281,      2455}, // 4.980A
+    {24329,      2458}, // 5.979A
+    {28414,      2455}, // 6.977A
+    {31408,      2540}, // 7.978A
+};`;
+
+    document.getElementById("table_10r").value = default_10r;
+    document.getElementById("table_10mr").value = default_10mr;
+
+    const slider = document.getElementById("factor_slider");
+    const factorVal = document.getElementById("factor_val");
+    const txt10r = document.getElementById("table_10r");
+    const txt10mr = document.getElementById("table_10mr");
+
+    // 正则提取 { s_raw, factor }
+    function parseCArray(text) {
+        const regex = /\{\s*(-?\d+)\s*,\s*(-?\d+)\s*\}/g;
+        let match;
+        const list = [];
+        while ((match = regex.exec(text)) !== null) {
+            list.push({
+                s: parseInt(match[1]),
+                f: parseInt(match[2])
+            });
+        }
+        return list;
+    }
+
+    // 插值寻找对应 s_raw 下的 factor
+    def_get_factor_at = function(list, target_s) {
+        if (list.length === 0) return 0;
+        if (target_s <= list[0].s) return list[0].f;
+        if (target_s >= list[list.length - 1].s) return list[list.length - 1].f;
+        for (let i = 0; i < list.length - 1; i++) {
+            if (target_s >= list[i].s && target_s <= list[i+1].s) {
+                let x0 = list[i].s, x1 = list[i+1].s;
+                let y0 = list[i].f, y1 = list[i+1].f;
+                return y0 + (target_s - x0) * (y1 - y0) / (x1 - x0);
+            }
+        }
+        return list[0].f;
+    };
+
+    function recalculate() {
+        const factor = parseFloat(slider.value);
+        factorVal.innerText = factor.toFixed(2);
+        
+        const list10r = parseCArray(txt10r.value);
+        const list10mr = parseCArray(txt10mr.value);
+        
+        if (list10r.length === 0 || list10mr.length === 0) {
+            document.getElementById("analysis_output").innerText = "错误：未能成功解析 C 语言数组，请确认括号 '{ }' 格式正确。";
+            return;
+        }
+        
+        // 1. 获取小电流档（10R）在满量程时的系数（即 s_raw = 32767 处的 factor）
+        const factor_10r_max = def_get_factor_at(list10r, 32767);
+        // 1 LSB 对应物理电流 (0.1uA 单位)
+        const lsb_10r_ua = (factor_10r_max / 65536.0);
+        // 满量程 32767 LSB 对应的最大物理电流 (A)
+        const i_max_amp = (32767 * lsb_10r_ua) / 10000000.0;
+        
+        // 2. 估算该满量程电流在 10mR 档位下对应的 LSB 大致数值
+        // 10mR 最低端的比例因子（通常是 index 0 的 factor）
+        const factor_10mr_min = list10mr[0].f;
+        const lsb_10mr_ua = factor_10mr_min; // 10mR 档的 LSB 步进就是 factor 自身
+        
+        // 10R 满量程电流换算为 10mR 的 LSB 读数为：
+        const equiv_lsb_10mr = (i_max_amp * 10000000.0) / lsb_10mr_ua;
+        
+        // 3. 计算比例尺 (Ratio)
+        const ratio = (factor_10r_max) / (65536.0 * factor_10mr_min);
+        
+        // 4. 结合用户调节的系数计算大电流档的触发绝对 LSB
+        const trigger_lsb_10mr = 32767 * factor * ratio;
+        
+        // 5. 反推适合写入固件的百分比宏 BACK_TO_UA_PERCENT
+        // 固件宏计算公式：DOWNSHIFT_RAW_LIMIT = ((32767 * BACK_TO_UA_PERCENT) / 100)
+        // 反推：BACK_TO_UA_PERCENT = (DOWNSHIFT_RAW_LIMIT * 100) / 32767
+        const recommended_percent = (trigger_lsb_10mr * 100.0) / 32767.0;
+        
+        // 输出诊断
+        document.getElementById("analysis_output").innerHTML = 
+            `• <b>小电流档 (10R) 分析</b>：满量程步进比例约为 <b>${(lsb_10r_ua/10).toFixed(4)} uA/LSB</b>，` +
+            `满量程物理限值电流为 <b>${(i_max_amp*1000).toFixed(3)} mA</b>。<br>` +
+            `• <b>大电流档 (10mR) 分析</b>：零点附近步进比例为 <b>${(lsb_10mr_ua/10).toFixed(1)} uA/LSB</b>。<br>` +
+            `• <b>物理量程交叉点</b>：10R 满量程电流在 10mR 寄存器中，仅相当于 <b>${equiv_lsb_10mr.toFixed(2)} LSB</b> 的极微弱信号。<br>` +
+            `• <b>回切触发目标设定</b>：在 DOWNSHIFT_FACTOR = <b>${factor.toFixed(2)}</b> 下，` +
+            `系统判定当大电流档 10mR 测量到的均值 LSB 低于 <b>${trigger_lsb_10mr.toFixed(2)} LSB</b> (约合 <b>${(i_max_amp*factor*1000).toFixed(3)} mA</b>) 时，回切降档。<br>` +
+            `• <b>反推宏百分比</b>：折算至 32767 的比例为 <b>${recommended_percent.toFixed(4)} %</b>。`;
+
+        // 输出固件宏
+        const code = 
+            `// 设定降档阈值：当 10mR 档的寄存器值低于满量程的 X % 时，切回 uA 档 (当前对应 ${trigger_lsb_10mr.toFixed(1)} LSB)\n` +
+            `#define BACK_TO_UA_PERCENT ${recommended_percent.toFixed(2)}\n` +
+            `#define DOWNSHIFT_RAW_LIMIT ((32767 * BACK_TO_UA_PERCENT) / 100)`;
+            
+        document.getElementById("code_output").innerText = code;
+    }
+
+    slider.addEventListener("input", recalculate);
+    txt10r.addEventListener("input", recalculate);
+    txt10mr.addEventListener("input", recalculate);
+
+    // 首次计算
+    recalculate();
+</script>
+
+</body>
+</html>

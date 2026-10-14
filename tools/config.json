@@ -1,0 +1,104 @@
+{
+    "port": "COM3",
+    "active_boundary_ma": 0.5,
+    "gap_tolerance_ms": 300,
+    "event_configs": [
+        {
+            "name": "仅测量未上报",
+            "min_ms": 0.0,
+            "max_ms": 50.0,
+            "min_peak_ma": 5.0,
+            "max_peak_ma": 12.0,
+            "level_ma": 3.0
+        },
+        {
+            "name": "测量并广播上报",
+            "min_ms": 500.0,
+            "max_ms": 999999.0,
+            "min_peak_ma": 5.0,
+            "max_peak_ma": 12.0,
+            "level_ma": 6.0
+        }
+    ],
+    "baud": "1500000",
+    "avg_count": 2000,
+    "min_yrange": 1.0,
+    "sample_interval_us": 0,
+    "battery_presets": [
+        {
+            "name": "CR2032 纽扣电池 (220mAh, 3V直供)",
+            "capacity_mah": 220.0,
+            "dod_pct": 85.0,
+            "eff_pct": 100.0,
+            "self_discharge_pct": 0.1
+        },
+        {
+            "name": "CR2450 大纽扣电池 (600mAh, 3V直供)",
+            "capacity_mah": 600.0,
+            "dod_pct": 85.0,
+            "eff_pct": 100.0,
+            "self_discharge_pct": 0.1
+        },
+        {
+            "name": "CR1220 微型纽扣 (40mAh, 3V直供)",
+            "capacity_mah": 40.0,
+            "dod_pct": 80.0,
+            "eff_pct": 100.0,
+            "self_discharge_pct": 0.1
+        },
+        {
+            "name": "AA 碱性电池×2 (2500mAh, 3V整机)",
+            "capacity_mah": 2500.0,
+            "dod_pct": 75.0,
+            "eff_pct": 100.0,
+            "self_discharge_pct": 0.3
+        },
+        {
+            "name": "AAA 碱性电池×2 (1000mAh, 3V整机)",
+            "capacity_mah": 1000.0,
+            "dod_pct": 75.0,
+            "eff_pct": 100.0,
+            "self_discharge_pct": 0.3
+        },
+        {
+            "name": "18650 锂电池 (2600mAh, 3.7V整机)",
+            "capacity_mah": 2600.0,
+            "dod_pct": 85.0,
+            "eff_pct": 100.0,
+            "self_discharge_pct": 2.0
+        },
+        {
+            "name": "18650降压测1.8V负载 (2600mAh, 185%)",
+            "capacity_mah": 2600.0,
+            "dod_pct": 85.0,
+            "eff_pct": 185.0,
+            "self_discharge_pct": 2.0
+        },
+        {
+            "name": "聚合物小锂电 (500mAh, 3.7V整机)",
+            "capacity_mah": 500.0,
+            "dod_pct": 80.0,
+            "eff_pct": 100.0,
+            "self_discharge_pct": 2.5
+        },
+        {
+            "name": "ER14250 锂亚电池 (1200mAh, 3.6V整机)",
+            "capacity_mah": 1200.0,
+            "dod_pct": 90.0,
+            "eff_pct": 100.0,
+            "self_discharge_pct": 0.08
+        }
+    ],
+    "selected_battery_preset_index": 0,
+    "battery_capacity_mah": 220.0,
+    "battery_dod_pct": 85.0,
+    "battery_eff_pct": 100.0,
+    "battery_self_discharge_pct": 0.1,
+    "show_battery_panel": true,
+    "chk_voltage": false,
+    "chk_save_csv": true,
+    "chk_limit_span": true,
+    "chk_second_clock": false,
+    "chk_enable_analysis": true,
+    "chk_show_current": true
+}
